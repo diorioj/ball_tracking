@@ -99,7 +99,6 @@ while True:
 
 			# save dx, dy of center of contour from center of frame to data list
 			frameData[i] = np.subtract(center, np.array(frameCenter))
-			print(frameData)
 			# if verbose, output data to command line
 			if args.get("verbose", True):
 				print(colors[i] + "> (dx: " + str(frameData[i][0]) + ", dy: " + str(frameData[i][1]) + ")")
