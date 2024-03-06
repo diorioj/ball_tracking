@@ -24,13 +24,13 @@ args = vars(ap.parse_args())
 colors = ["green", "pink", "yellow"]
 bgr = [(50, 205, 50), (147, 105, 255), (0, 255, 255)]
 
-greenBounds = ((60, 100, 100) , (80, 255, 255)) # (lower, upper)
+greenBounds = ((60, 40, 40) , (80, 255, 255)) # (lower, upper)
 greenBuffer = deque(maxlen=args["buffer"]) # points to be visualized as "tail"
 
-pinkBounds = ((150, 100, 100), (170, 255, 255))
+pinkBounds = ((150, 80, 80), (170, 255, 255))
 pinkBuffer = deque(maxlen=args["buffer"])
 
-yellowBounds = ((20, 100, 100), (40, 255, 255))
+yellowBounds = ((20, 60, 60), (40, 255, 255))
 yellowBuffer = deque(maxlen=args["buffer"])
 
 boundaries = [greenBounds, pinkBounds, yellowBounds]
@@ -50,8 +50,7 @@ else:
 time.sleep(2.0)
 
 # initialize list of data points to be saved to csv or xmitted
-# [[g],[p],[y]]
-data = [[], [], []]
+data = []
 
 # keep looping until video source stops
 while True:
@@ -74,7 +73,7 @@ while True:
 	# a series of dilations and erosions to remove any small
 	# blobs left in the mask
 	masks = [None] * len(colors)
-	frameData = [None] * len(colors)
+	frameData = [[0, 0]] * len(colors)
 
 	for i in range(len(colors)):
 		masks[i] = cv2.inRange(hsv, boundaries[i][0], boundaries[i][1])
@@ -98,11 +97,8 @@ while True:
 			center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
 
 			# save dx, dy of center of contour from center of frame to data list
-			frameData[i] = np.subtract(center, np.array(frameCenter))
-			# if verbose, output data to command line
-			if args.get("verbose", True):
-				print(colors[i] + "> (dx: " + str(frameData[i][0]) + ", dy: " + str(frameData[i][1]) + ")")
-
+			frameData[i] = center
+			
 			# update the buffer queue
 			buffers[i].appendleft(center)
 
@@ -112,7 +108,25 @@ while True:
 				cv2.circle(frame, (int(x), int(y)), int(radius),
 					bgr[i], 2)
 				cv2.circle(frame, center, int(args["radius"]), bgr[i], -1)
-	data.append(frameData)
+
+	xSum = 0
+	ySum = 0
+	count = 0
+	for x, y in frameData:
+		if (x > 0 or y > 0):
+			count = count + 1
+			xSum = xSum + x
+			ySum = ySum + y
+			
+	if count > 0:
+		# draw circle for middle of 3 balls
+		triCenter = [(xSum//count), (ySum//count)]
+		cv2.circle(frame, triCenter, int(args["radius"]), (0, 0, 0), -1)
+		data.append([np.subtract(triCenter, frameCenter), count])
+	
+		# if verbose, output data to command line
+		if args.get("verbose", True):
+			print("(dx: " + str(data[-1][0][0]) + ", dy: " + str(data[-1][0][1]) + "), count: " + str(data[-1][1]))
 
 	# draw tails
 	# loop over the set of tracked points
