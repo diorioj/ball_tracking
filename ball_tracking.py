@@ -6,18 +6,25 @@ import cv2
 import imutils
 import time
 import csv
+import serial
 
 # configure arguments
 # -h/--help is automatically generated
 ap = argparse.ArgumentParser()
 ap.add_argument("-v", "--video", help="path to the (optional) video file")
-ap.add_argument("-b", "--buffer", type=int, default=64, help="max buffer size/tail length")
+ap.add_argument("-b", "--buffer", type=int, default=5, help="max buffer size/tail length")
 ap.add_argument("-c", "--camera", type=int, default=0, help="camera device index")
 ap.add_argument("-r", "--radius", type=int, default=5, help="minimum radius of target")
 ap.add_argument("-w", "--width", type=int, default=600, help="set video resize width")
 ap.add_argument("-o", "--output", default='tracking_output.csv', help="output file name")
 ap.add_argument("-V", "--verbose", action='store_true', help="output coordinates of target to command line") 
+ap.add_argument("-u", "--uart", default='/dev/ttyUSB1', help="path to the uart serial device")
 args = vars(ap.parse_args())
+
+if args.get("uart", True):
+	# UART with pyserial
+	ser = serial.Serial(args["uart"], 9600, timeout=1)
+	ser.reset_input_buffer()
 
 # define the lower and upper boundaries
 # of the target balls in the HSV color space
@@ -124,9 +131,19 @@ while True:
 		cv2.circle(frame, triCenter, int(args["radius"]), (0, 0, 0), -1)
 		data.append([np.subtract(triCenter, frameCenter), count])
 	
+		output = "(dx: " + str(data[-1][0][0]) + ", dy: " + str(data[-1][0][1]) + "), count: " + str(data[-1][1])
+
+		if args.get("uart", True):
+			# tx/rx arduino
+			ser.write((output + "\n").encode('utf-8'))
+			line = ser.readline().decode('utf-8').rstrip()
+
+			if args.get("verbose", True):
+				print(line)
+
 		# if verbose, output data to command line
-		if args.get("verbose", True):
-			print("(dx: " + str(data[-1][0][0]) + ", dy: " + str(data[-1][0][1]) + "), count: " + str(data[-1][1]))
+		elif args.get("verbose", True):
+			print(output)
 
 	# draw tails
 	# loop over the set of tracked points
