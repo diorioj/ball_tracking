@@ -1,6 +1,6 @@
 # Ball Tracking POC
 
-This python code uses OpenCV to detect, track, and visualize a green 
+This python code uses OpenCV to detect, track, and visualize a yellow, pink, green 
 ball via a camera feed or video file.
 
 ## Usage
