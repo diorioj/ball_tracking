@@ -109,6 +109,7 @@ def main():
 
     # initialize list of data points to be saved to csv or xmitted
     data = []
+	triCenters = []
 
     # keep looping until video source stops
     while True:
@@ -174,19 +175,22 @@ def main():
                 
         if count > 0:
             triCenter = [(xSum//count), (ySum//count)]
-            data.append([np.subtract(triCenter, frameCenter), count])
+            if np.size(triCenters) == 0 or (Math.abs(triCenter[0] - triCenters[-1][0]) < 50 and Math.abs(triCenter[1] - triCenters[-1][1]) < 50):
+	       triCenters.append(triCenter)
+		
+               data.append([np.subtract(triCenter, frameCenter), count])
 
-            output = buildOutputStr(data[-1])
+               output = buildOutputStr(data[-1])
 
-            # tx/rx arduino
-            ser.write((output + "\n").encode('utf-8'))
-            line = ser.readline().decode('latin-1').rstrip()
+               # tx/rx arduino
+               ser.write((output + "\n").encode('utf-8'))
+               line = ser.readline().decode('latin-1').rstrip()
+   
+               if args.get("verbose", True):
+                   print(line)
 
-            if args.get("verbose", True):
-                print(line)
-
-            # draw circle for middle of 3 balls
-            cv2.circle(frame, triCenter, int(args["radius"]), (0, 0, 255), -1)
+               # draw circle for middle of 3 balls
+               cv2.circle(frame, triCenter, int(args["radius"]), (0, 0, 255), -1)
 
         # draw tails
         # loop over the set of tracked points
