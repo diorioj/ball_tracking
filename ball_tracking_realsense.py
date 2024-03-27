@@ -19,10 +19,10 @@ def configureArgs():
     # -h/--help is automatically generated
     ap = argparse.ArgumentParser()
     ap.add_argument("-d", "--draw", action='store_true', help="draw to video stream")
-    ap.add_argument("-b", "--buffer", type=int, default=5, help="max buffer size/tail length")
+    ap.add_argument("-b", "--buffer", type=int, default=0, help="max buffer size/tail length")
     ap.add_argument("-c", "--camera", type=int, default=0, help="camera device index")
     ap.add_argument("-r", "--radius", type=int, default=5, help="minimum radius of target")
-    ap.add_argument("-w", "--width", type=int, default=600, help="set video resize width")
+    ap.add_argument("-w", "--width", type=int, default=1280, help="set video resize width")
     ap.add_argument("-o", "--output", default='tracking_output.csv', help="output file name")
     ap.add_argument("-V", "--verbose", action='store_true', help="output coordinates of target to command line") 
     ap.add_argument("-u", "--uart", default='/dev/ttyUSB0', help="path to the uart serial device")
@@ -48,7 +48,7 @@ def startVideoStream():
 
     vs = rs.pipeline()
     config = rs.config()
-    config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+    config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
     # Start stream
     vs.start(config)
 
@@ -76,16 +76,18 @@ def defineBoundaries():
 
     # define the lower and upper boundaries
     # of the target balls in the HSV color space
+    # h = hue, s = saturation, v = value(brightness)
+    # use rgb_to_hsv.py to convert rgb to hsv
     colors = ["green", "pink", "yellow"]
     bgr = [(50, 205, 50), (147, 105, 255), (0, 255, 255)]
 
-    greenBounds = ((60, 60, 60) , (80, 255, 255)) # (lower, upper)
+    greenBounds = ((50, 140, 60) , (80, 255, 250)) # (lower, upper)
     greenBuffer = deque(maxlen=args["buffer"]) # points to be visualized as "tail"
 
-    pinkBounds = ((150, 80, 80), (170, 255, 255))
+    pinkBounds = ((150, 140, 60), (170, 255, 250))
     pinkBuffer = deque(maxlen=args["buffer"])
 
-    yellowBounds = ((20, 20, 20), (40, 255, 255))
+    yellowBounds = ((15, 140, 60), (40, 255, 250))
     yellowBuffer = deque(maxlen=args["buffer"])
 
     boundaries = [greenBounds, pinkBounds, yellowBounds]
