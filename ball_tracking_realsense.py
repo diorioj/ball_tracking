@@ -36,7 +36,7 @@ def configureSer():
     global ser
 
     # UART with pyserial
-    ser = serial.Serial(args["uart"], 9600, timeout=1)
+    ser = serial.Serial(args["uart"], 38400, timeout=1)
     ser.reset_input_buffer()
 
 
@@ -94,10 +94,10 @@ def defineBoundaries():
     buffers = [greenBuffer, pinkBuffer, yellowBuffer]
 
 '''
-Build string to be output to UART
+Build string to be output to UART dx,dy
 '''
 def buildOutputStr(coordData):
-    return "(dx: " + str(coordData[0][0]) + ", dy: " + str(coordData[0][1]) + "), count: " + str(coordData[1])
+    return str(coordData[0][0]) + "," + str(coordData[0][1])
 
 '''
 This program starts a video stream via realsense camera and tracks the center of three balls
