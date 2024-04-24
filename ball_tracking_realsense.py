@@ -1,3 +1,5 @@
+'Credit to Adrian Rosebrock at pyimagesearch.com for the Ball Tracking with OpenCV guide and code snippets'
+
 from collections import deque
 from imutils.video import VideoStream
 
@@ -36,7 +38,7 @@ def configureSer():
     global ser
 
     # UART with pyserial
-    ser = serial.Serial(args["uart"], 38400, timeout=1)
+    ser = serial.Serial(args["uart"], baudrate = 38400, bytesize = EIGHTBITS, parity = PARITY_NONE)
     ser.reset_input_buffer()
 
 
@@ -164,6 +166,10 @@ def main():
                             bgr[i], 2)
                         cv2.circle(frame, center, int(args["radius"]), bgr[i], -1)
 
+	def serialoutput();
+		ser.write(output_x + b'\x64' + b'\x00')
+		ser.write(output_y + b'\x64' + b'\x00')
+	    
         # logic for detecting center of balls
         xSum = 0
         ySum = 0
@@ -173,17 +179,35 @@ def main():
                 count = count + 1
                 xSum = xSum + x
                 ySum = ySum + y
-                
+
         if count > 0:
             triCenter = [(xSum//count), (ySum//count)]
             data.append([np.subtract(triCenter, frameCenter), count])
 
-            output = buildOutputStr(data[-1])
+		for xSum, ySum in frameData:
+			if (xSum > 0 and ySum > 0)
+			    output_x = b'\x58\63' #Xc
+			    output_y = b'\x59\6E' #Yn
+			if (xSum > 0 and ySum < 0)
+			    output_x = b'\x58\63' #Xc
+			    output_y = b'\x59\63' #Yc
+			if (xSum < 0 and ySum > 0)
+			    output_x = b'\x58\6E' #Xn
+			    output_y = b'\x59\6E' #Yn
+			if (xSum > 0 and ySum < 0)
+			    output_x = b'\x58\6E' #Xn
+			    output_y = b'\x59\63' #Yc
+			    
+            'output = buildOutputStr(data[-1])
 
             # tx/rx arduino
-            ser.write((output + "\n").encode('utf-8'))
+	    ser.write(output_x + b'\x64' + b'\x00')
+	    ser.write(output_y + b'\x64' + b'\x00')
+		
+            '''
+	    ser.write((output + "\n").encode('ascii'))
             line = ser.readline().decode('latin-1').rstrip()
-
+	    '''
             if args.get("verbose", True):
                 print(line)
 
