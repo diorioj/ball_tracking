@@ -194,6 +194,7 @@ def main():
                 output_x = b'\x58\x6E' #Xn
                 output_y = b'\x59\x63' #Yc
 		    
+
             # tx/rx arduino
             ser.write(output_x + b'\x64' + b'\x00')
             ser.write(output_y + b'\x64' + b'\x00')
