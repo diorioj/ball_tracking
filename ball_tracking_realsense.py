@@ -1,3 +1,5 @@
+'Credit to Adrian Rosebrock at pyimagesearch.com for the Ball Tracking with OpenCV guide and code snippets'
+
 from collections import deque
 from imutils.video import VideoStream
 
@@ -36,7 +38,7 @@ def configureSer():
     global ser
 
     # UART with pyserial
-    ser = serial.Serial(args["uart"], 9600, timeout=1)
+    ser = serial.Serial(args["uart"], baudrate = 38400, bytesize = serial.EIGHTBITS, parity = serial.PARITY_NONE, stopbits = 1)
     ser.reset_input_buffer()
 
 
@@ -48,7 +50,7 @@ def startVideoStream():
 
     vs = rs.pipeline()
     config = rs.config()
-    config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
+    config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 15)
     # Start stream
     vs.start(config)
 
@@ -94,10 +96,10 @@ def defineBoundaries():
     buffers = [greenBuffer, pinkBuffer, yellowBuffer]
 
 '''
-Build string to be output to UART
+Build string to be output to UART dx,dy
 '''
 def buildOutputStr(coordData):
-    return "(dx: " + str(coordData[0][0]) + ", dy: " + str(coordData[0][1]) + "), count: " + str(coordData[1])
+    return str(coordData[0][0]) + "," + str(coordData[0][1])
 
 '''
 This program starts a video stream via realsense camera and tracks the center of three balls
@@ -173,20 +175,35 @@ def main():
                 count = count + 1
                 xSum = xSum + x
                 ySum = ySum + y
-                
+
         if count > 0:
             triCenter = [(xSum//count), (ySum//count)]
             data.append([np.subtract(triCenter, frameCenter), count])
 
-            output = buildOutputStr(data[-1])
-
+            dx,dy = data[-1][0]
+            if (dx > 0 and dy < 0): #top right
+                output_x = b'\x58\x63' #Xc
+                output_y = b'\x59\x6E' #Yn
+            if (dx > 0 and dy > 0):
+                output_x = b'\x58\x63' #Xc
+                output_y = b'\x59\x63' #Yc
+            if (dx < 0 and dy < 0):
+                output_x = b'\x58\x6E' #Xn
+                output_y = b'\x59\x6E' #Yn
+            if (dx > 0 and dy > 0):
+                output_x = b'\x58\x6E' #Xn
+                output_y = b'\x59\x63' #Yc
+		    
             # tx/rx arduino
-            ser.write((output + "\n").encode('utf-8'))
-            line = ser.readline().decode('latin-1').rstrip()
+            ser.write(output_x + b'\x64' + b'\x00')
+            ser.write(output_y + b'\x64' + b'\x00')
 
+	    #ser.write((output + "\n").encode('ascii'))
+        #line = ser.readline().decode('latin-1').rstrip()
+	  
             if args.get("verbose", True):
-                print(line)
-
+                print(dx + dy)
+                print("\n")
             # draw circle for middle of 3 balls
             cv2.circle(frame, triCenter, int(args["radius"]), (0, 0, 255), -1)
 
